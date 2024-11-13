@@ -67,8 +67,26 @@ def find_words(dilated_im, im):
     # 1. find all connected components
     # 2. build a mask of only one connected component each time, and find it extremeties
     # TODO: did it came out perfect? Why? Why not?
+    num_labels, _, stats, _ = cv2.connectedComponentsWithStats(dilated_im)
+    print(f'Detected {num_labels} words')
     return res
 
+def show_connected_components(dilated_im, im):
+    res = im.copy()
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(dilated_im)
+    print(f'Detected {num_labels} words')
+    color_map = np.random.randint(0, 255, size=(num_labels, 3), dtype=np.uint8)
+    color_map[0] = [0, 0, 0]  # Setting background color to black
+    output_image = np.zeros((labels.shape[0], labels.shape[1], 3), dtype=np.uint8)
+    for label in range(num_labels):
+        output_image[labels == label] = color_map[label]
+    plt.figure(figsize=(20, 20))
+    plt.imshow(output_image)
+    plt.show()
+    cv2.imwrite("output_CONNECTED.png", output_image)
+    
+    
+show_connected_components(dilated_im, im)
 
 def plot_rec(mask, res_im):
     # plot a rectengle around each word in res image using mask image of the word
