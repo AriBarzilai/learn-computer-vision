@@ -45,38 +45,37 @@ plt.imshow(im_th, cmap='gray', vmin=0, vmax=255)
 plt.show()
 
 # %%
-# TODO: next, merge all pixels of the same word together to make one connected component using a morphologic operator
+def connect_word_letters(im_th, kernel):
+    dilated_im = cv2.dilate(im_th, kernel)
+    #cv2.imwrite("output_SAVE3.png", dilated_im)
+    plt.figure(figsize=(20, 20))
+    plt.imshow(dilated_im, cmap='gray', vmin=0, vmax=255)
+    plt.show()
+    return dilated_im
+
 kernel = np.zeros((4,4),dtype=np.uint8)
 kernel[1:3,:] = 1
-plt.figure(figsize=figsize)
-plt.imshow(kernel,cmap="gray")
-plt.show()
-dilated_im = cv2.dilate(im_th, kernel)
-cv2.imwrite("output_SAVE3.png", dilated_im)
-plt.figure(figsize=(20, 20))
-plt.imshow(dilated_im, cmap='gray', vmin=0, vmax=255)
-plt.show()
+dilated_im = connect_word_letters(im_th, kernel)
 
 # %%
 
 
 def find_words(dilated_im, im):
     res = im.copy()
-
-    # TODO: draw rectengles around each word:
-    # 1. find all connected components
-    # 2. build a mask of only one connected component each time, and find it extremeties
-    # TODO: did it came out perfect? Why? Why not?
-    num_labels, _, stats, _ = cv2.connectedComponentsWithStats(dilated_im)
+    num_labels, labels, _, _ = cv2.connectedComponentsWithStats(dilated_im)
     print(f'Detected {num_labels} words')
+    for i in range(1, num_labels):  # start from 1 to skip background
+        mask = labels == i
+        res = plot_rec(mask, res)
     return res
 
 def show_connected_components(dilated_im, im):
+    # this function is not actually used, it's for fun
     res = im.copy()
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(dilated_im)
+    num_labels, labels, _, _ = cv2.connectedComponentsWithStats(dilated_im)
     print(f'Detected {num_labels} words')
     color_map = np.random.randint(0, 255, size=(num_labels, 3), dtype=np.uint8)
-    color_map[0] = [0, 0, 0]  # Setting background color to black
+    color_map[0] = [0, 0, 0]  # set background color to black
     output_image = np.zeros((labels.shape[0], labels.shape[1], 3), dtype=np.uint8)
     for label in range(num_labels):
         output_image[labels == label] = color_map[label]
@@ -99,6 +98,7 @@ def plot_rec(mask, res_im):
     down = y.max()
 
     res_im = cv2.rectangle(res_im, (left, up), (right, down), (0, 20, 200), 2)
+    cv2.imwrite("output_BOXED.png", res_im)
     return res_im
 
 
@@ -109,9 +109,48 @@ plt.show()
 
 
 # %%
-# TODO: now we want to mark only the big title words, and do this ONLY using morphological operators
+def split_regions(im_th):
+    # splits the image into title regions and article regions
+    # label == 0 is background/article, everything else is titles
+    binary_only_title_cc_img = im_th.copy()
+    kernel = np.ones((3,3),dtype=np.uint8)
+    binary_only_title_cc_img = cv2.morphologyEx(binary_only_title_cc_img, cv2.MORPH_ERODE, kernel)
+    kernel = np.ones((43,43),dtype=np.uint8)
+    binary_only_title_cc_img = cv2.morphologyEx(binary_only_title_cc_img, cv2.MORPH_CLOSE, kernel)
+    kernel = np.ones((15,15),dtype=np.uint8)
+    binary_only_title_cc_img = cv2.morphologyEx(binary_only_title_cc_img, cv2.MORPH_OPEN, kernel, iterations=4)
+    kernel = np.ones((30,30),dtype=np.uint8)
+    binary_only_title_cc_img = cv2.morphologyEx(binary_only_title_cc_img, cv2.MORPH_CLOSE, kernel, iterations=20)
 
+    num_labels, labels, _, _ = cv2.connectedComponentsWithStats(binary_only_title_cc_img)
+    return num_labels, labels
 
+num_labels, labels = split_regions(im_th)
+article_mask = ((labels == 0).astype(np.uint8) * 255)
+title_mask = ((labels > 0).astype(np.uint8) * 255)
+
+title_region = cv2.bitwise_and(im_th, im_th, mask=title_mask)
+article_region = cv2.bitwise_and(im_th, im_th, mask=article_mask)
+
+kernel = np.ones((7,7),dtype=np.uint8)
+title_res = connect_word_letters(title_region, kernel)
+
+kernel = np.zeros((4,4),dtype=np.uint8)
+kernel[1:3,:] = 1
+article_res = connect_word_letters(article_region, kernel)
+
+im_title = im.copy()
 plt.figure(figsize=(20, 20))
-plt.imshow(find_words(binary_only_title_cc_img, im))
+title_final = find_words(title_res, im_title)
+plt.imshow(title_final)
 plt.show()
+cv2.imwrite("output_TITLE.png", title_final)
+
+im_article = im.copy()
+plt.figure(figsize=(20, 20))
+article_final = find_words(article_res, im_article)
+plt.imshow(article_final)
+plt.show()
+cv2.imwrite("output_ARTICLE.png", article_final)
+
+# %%
