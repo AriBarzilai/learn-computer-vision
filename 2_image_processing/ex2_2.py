@@ -57,6 +57,7 @@ kernel = np.zeros((4,4),dtype=np.uint8)
 kernel[1:3,:] = 1
 dilated_im = connect_word_letters(im_th, kernel)
 
+
 # %%
 
 
@@ -122,12 +123,15 @@ def split_regions(im_th):
     kernel = np.ones((30,30),dtype=np.uint8)
     binary_only_title_cc_img = cv2.morphologyEx(binary_only_title_cc_img, cv2.MORPH_CLOSE, kernel, iterations=20)
 
+    plt.imshow(find_words(binary_only_title_cc_img, im))
+    plt.show()
     num_labels, labels, _, _ = cv2.connectedComponentsWithStats(binary_only_title_cc_img)
     return num_labels, labels
 
 num_labels, labels = split_regions(im_th)
 article_mask = ((labels == 0).astype(np.uint8) * 255)
 title_mask = ((labels > 0).astype(np.uint8) * 255)
+# %%
 
 title_region = cv2.bitwise_and(im_th, im_th, mask=title_mask)
 article_region = cv2.bitwise_and(im_th, im_th, mask=article_mask)
@@ -152,5 +156,7 @@ article_final = find_words(article_res, im_article)
 plt.imshow(article_final)
 plt.show()
 cv2.imwrite("output_ARTICLE.png", article_final)
+
+# %%
 
 # %%

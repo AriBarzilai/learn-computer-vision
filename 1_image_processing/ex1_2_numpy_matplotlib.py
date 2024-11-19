@@ -28,7 +28,7 @@ def build_pyramid(pyramid_size):
     # TODO: in the 3 lines of code below 3 mistakes were made.
     #  correct the mistakes to reveal the correct plot.
     #  try to keep as much from the original code as-is, so don't re-write the entire 3 lines
-    xy_other_half = np.array([ 2*xy_first_half[0, :].max() - xy_first_half[0, :], xy_first_half[1, :]])
+    xy_other_half = np.array([ 2*xy_first_half[0, :].max() - xy_first_half[0, ::-1], xy_first_half[1, ::-1]])
     xy_full = np.concatenate((xy_first_half, xy_other_half), axis=1)
     plt.plot(xy_full[0, :], xy_full[1, :])
 
@@ -36,14 +36,14 @@ def build_pyramid(pyramid_size):
 # %%
 pyramid_sizes = [10, 50, 90, 140]
 
-# def plot_half_pyramid(pyramid_size):
-#     xy_half = half_pyramid(pyramid_size)
-#     plt.plot(xy_half[0, :], xy_half[1, :])
-#     plt.title(f"Half Pyramids")
+def plot_half_pyramid(pyramid_size):
+    xy_half = half_pyramid(pyramid_size)
+    plt.plot(xy_half[0, :], xy_half[1, :])
+    plt.title(f"Half Pyramids")
 
-# for sz in pyramid_sizes:
-#     plot_half_pyramid(sz)
-# plt.show()
+for sz in pyramid_sizes:
+    plot_half_pyramid(sz)
+plt.show()
   
 plt.figure()
 for sz in pyramid_sizes:
