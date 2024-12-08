@@ -72,7 +72,6 @@ def bilateral_filter(source, d, sigma_r, sigma_s):
 
     return filtered_image
 
-
 # %%
 # upload noisy image
 src = cv2.imread("butterfly_noisy.jpg")
@@ -85,7 +84,7 @@ plt.show()
 
 # %%
 # ======== run
-d = 5  # edge size of neighborhood perimeter
+d = 3  # edge size of neighborhood perimeter
 sigma_r = 12  # sigma range
 sigma_s = 16  # sigma spatial
 
@@ -95,6 +94,47 @@ plt.figure(figsize=(10, 10))
 plt.imshow(my_bilateral_filtered_image)
 plt.colorbar()
 plt.show()
+
+# %%
+# hyperparameter testing
+import time
+
+sigmas_r = [12, 40, 80]
+sigmas_s = [16, 32, 64]
+ds = [3, 5, 7]
+
+for d in ds:
+    results = {}
+    times = {}
+    # Compute filter and record times
+    for sr in sigmas_r:
+        for ss in sigmas_s:
+            start = time.time()
+            img = bilateral_filter(src, d, sr, ss)
+            end = time.time()
+            
+            results[(sr, ss)] = img
+            times[(sr, ss)] = end - start
+
+    # Create figure for this d
+    fig, axes = plt.subplots(len(sigmas_r), len(sigmas_s), figsize=(10, 10))
+
+    # Plot each result with runtime
+    for i, sr in enumerate(sigmas_r):
+        for j, ss in enumerate(sigmas_s):
+            ax = axes[i][j]
+            img = results[(sr, ss)]
+            runtime = times[(sr, ss)]
+            
+            ax.imshow(img)
+            
+            # Add runtime information to the title
+            ax.set_title(f"d={d}, sr={sr}, ss={ss}\nTime: {runtime:.3f}s", fontsize=10)
+            ax.axis('off')
+
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(f"d{d}.png", transparent=True)        
 
 # %%
 # compare to opencv
